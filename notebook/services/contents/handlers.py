@@ -15,6 +15,7 @@ from jupyter_client.jsonutil import date_default
 
 from notebook.base.handlers import (
     IPythonHandler, APIHandler, path_regex,
+    CloudAPIHandler
 )
 
 
@@ -310,6 +311,58 @@ class TrustNotebooksHandler(IPythonHandler):
         yield maybe_future(cm.trust_notebook(path))
         self.set_status(201)
         self.finish()
+
+
+class CloudContentsHandler(CloudAPIHandler):
+
+    def location_url(self, path):
+        """Return the full URL location of a file.
+
+        Parameters
+        ----------
+        path : unicode
+            The API path of the file, such as "foo/bar.txt".
+        """
+        return url_path_join(
+            self.base_url, 'api', 'contents', url_escape(path)
+        )
+
+    def _finish_model(self, model, location=True):
+        """Finish a JSON request with a model, setting relevant headers, etc."""
+        if location:
+            location = self.location_url(model['path'])
+            self.set_header('Location', location)
+        self.set_header('Last-Modified', model['last_modified'])
+        self.set_header('Content-Type', 'application/json')
+        self.finish(json.dumps(model, default=date_default))
+
+    @web.authenticated
+    @gen.coroutine
+    def get(self, path=''):
+        """Return a model for a file or directory.
+
+        A directory model contains a list of models (without content)
+        of the files and directories it contains.
+        """
+        path = path or ''
+        type = self.get_query_argument('type', default=None)
+        if type not in {None, 'directory', 'file', 'notebook'}:
+            raise web.HTTPError(400, u'Type %r is invalid' % type)
+
+        format = self.get_query_argument('format', default=None)
+        if format not in {None, 'text', 'base64'}:
+            raise web.HTTPError(400, u'Format %r is invalid' % format)
+        content = self.get_query_argument('content', default='1')
+        if content not in {'0', '1'}:
+            raise web.HTTPError(400, u'Content %r is invalid' % content)
+        content = int(content)
+        
+        model = yield maybe_future(self.contents_manager.get(
+            path=path, type=type, format=format, content=content,
+        ))
+        validate_model(model, expect_content=content)
+        self._finish_model(model, location=False)
+
 #-----------------------------------------------------------------------------
 # URL to handler mappings
 #-----------------------------------------------------------------------------
@@ -323,5 +376,6 @@ default_handlers = [
         ModifyCheckpointsHandler),
     (r"/api/contents%s/trust" % path_regex, TrustNotebooksHandler),
     (r"/api/contents%s" % path_regex, ContentsHandler),
+    (r"/api/cloud/contents%s" % path_regex, CloudContentsHandler),
     (r"/api/notebooks/?(.*)", NotebooksRedirectHandler),
 ]

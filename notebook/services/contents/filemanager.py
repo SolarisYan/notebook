@@ -621,3 +621,15 @@ class FileContentsManager(FileManagerMixin, ContentsManager):
                 raise web.HTTPError(400, "Path '{}' contains characters that are invalid for the filesystem. "
                                          "Path names on this filesystem cannot contain any of the following "
                                          "characters: {}".format(path, invalid_chars))
+
+
+class CloudFileContentsManager(FileContentsManager):
+    root_dir = Unicode(config=True)
+
+    @default('root_dir')
+    def _default_root_dir(self):
+        return os.getenv("DATA_PATH") or "/data"
+        # try:
+        #     return self.parent.notebook_dir
+        # except AttributeError:
+        #     return getcwd()

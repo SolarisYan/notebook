@@ -176,13 +176,13 @@ def load_handlers(name):
 
 class NotebookWebApplication(web.Application):
 
-    def __init__(self, jupyter_app, kernel_manager, contents_manager,
+    def __init__(self, jupyter_app, kernel_manager, contents_manager, cloud_contents_manager,
                  session_manager, kernel_spec_manager,
                  config_manager, extra_services, log,
                  base_url, default_url, settings_overrides, jinja_env_options):
 
         settings = self.init_settings(
-            jupyter_app, kernel_manager, contents_manager,
+            jupyter_app, kernel_manager, contents_manager, cloud_contents_manager,
             session_manager, kernel_spec_manager, config_manager,
             extra_services, log, base_url,
             default_url, settings_overrides, jinja_env_options)
@@ -193,7 +193,7 @@ class NotebookWebApplication(web.Application):
 
         super(NotebookWebApplication, self).__init__(handlers, **settings)
 
-    def init_settings(self, jupyter_app, kernel_manager, contents_manager,
+    def init_settings(self, jupyter_app, kernel_manager, contents_manager, cloud_contents_manager,
                       session_manager, kernel_spec_manager,
                       config_manager, extra_services,
                       log, base_url, default_url, settings_overrides,
@@ -287,6 +287,7 @@ class NotebookWebApplication(web.Application):
             # managers
             kernel_manager=kernel_manager,
             contents_manager=contents_manager,
+            cloud_contents_manager=cloud_contents_manager,
             session_manager=session_manager,
             kernel_spec_manager=kernel_spec_manager,
             config_manager=config_manager,
@@ -1687,7 +1688,7 @@ class NotebookApp(JupyterApp):
                 sys.exit(1)
 
         self.web_app = NotebookWebApplication(
-            self, self.kernel_manager, self.contents_manager,
+            self, self.kernel_manager, self.contents_manager, self.cloud_contents_manager,
             self.session_manager, self.kernel_spec_manager,
             self.config_manager, self.extra_services,
             self.log, self.base_url, self.default_url, self.tornado_settings,

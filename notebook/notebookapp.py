@@ -85,6 +85,7 @@ from .services.config import ConfigManager
 from .services.contents.manager import ContentsManager
 from .services.contents.filemanager import FileContentsManager
 from .services.contents.largefilemanager import LargeFileManager
+from .services.contents.cloudfilemanager import CloudFileManager
 from .services.sessions.sessionmanager import SessionManager
 from .gateway.managers import GatewayKernelManager, GatewayKernelSpecManager, GatewaySessionManager, GatewayClient
 
@@ -1347,6 +1348,13 @@ class NotebookApp(JupyterApp):
         help=_('The notebook manager class to use.')
     )
 
+    cloud_contents_manager_class = Type(
+        default_value=CloudFileManager,
+        klass=ContentsManager,
+        config=True,
+        help=_('The cloud notebook manager class to use.')
+    )
+
     kernel_manager_class = Type(
         default_value=MappingKernelManager,
         klass=MappingKernelManager,
@@ -1578,6 +1586,12 @@ class NotebookApp(JupyterApp):
             parent=self,
             log=self.log,
         )
+
+        self.cloud_contents_manager = self.cloud_contents_manager_class(
+            parent=self,
+            log=self.log,
+        )
+
         self.session_manager = self.session_manager_class(
             parent=self,
             log=self.log,

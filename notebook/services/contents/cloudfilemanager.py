@@ -1,4 +1,5 @@
 import os
+from traitlets import Any, Unicode, Bool, TraitError, observe, default, validate
 from notebook.services.contents.filemanager import FileContentsManager
 
 class CloudFileManager(FileContentsManager):
